@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Was hättest du 1933 gewählt?</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      max-width: 1000px;
+      margin: 40px auto;
+    }
+    #quizContainer {
+      flex: 2;
+      padding-right: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .question {
+      font-size: 1.4em;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .explanation {
+      font-size: 0.95em;
+      font-weight: normal;
+      margin-bottom: 20px;
+      color: #555;
+      max-width: 600px;
+    }
+    .button-group button {
+      display: block;
+      margin: 12px 0;
+      padding: 16px;
+      width: 300px;
+      font-size: 1.1em;
+      cursor: pointer;
+    }
+    #resultsSidebar {
+      flex: 1;
+      background: #f4f4f4;
+      padding: 20px;
+      border-left: 2px solid #ccc;
+      display: none;
+    }
+    .result-bar-container {
+      display: flex; /* Für nebeneinander Anordnung */
+      align-items: center; /* Vertikal zentrieren */
+      margin-bottom: 10px;
+    }
+    .result-bar {
+      height: 24px;
+      color: white;
+      padding-left: 8px;
+      line-height: 24px;
+      font-weight: bold;
+      /* flex-grow: 1; Entfernt */
+      padding-right: 10px; /* Platz für Text */
+      white-space: nowrap; /* Verhindert Umbruch des Textes */
+      overflow: hidden; /* Verhindert Überlaufen des Textes */
+    }
+    .percentage-text {
+      color: black;
+      margin-left: 10px; /* Abstand zum Balken */
+      min-width: 40px; /* Mindestbreite für die Prozentzahl */
+      text-align: right;
+    }
+    .NSDAP { background-color: brown; }
+    .SPD { background-color: red; }
+    .KPD { background-color: darkred; }
+    .Zentrum { background-color: black; }
+    .DNVP { background-color: navy; }
+  </style>
+</head>
+<body>
+  <div id="quizContainer">
+    <div class="question" id="questionText"></div>
+    <div class="explanation" id="questionExplanation"></div>
+    <div class="button-group">
+      <button onclick="answer('agree')">Stimme zu</button>
+      <button onclick="answer('neutral')">Neutral</button>
+      <button onclick="answer('disagree')">Stimme nicht zu</button>
+    </div>
+  </div>
+  <div id="resultsSidebar"></div>
+
+  <script>
+    const questions = [
+      {
+        text: "Der Staat sollte die Wirtschaft vollständig kontrollieren, um soziale Gerechtigkeit zu schaffen.",
+        explanation: "Soll der Staat alle Produktionsmittel kontrollieren, um Gleichheit herzustellen?",
+        points: {
+          agree: { KPD: 2, SPD: 1 },
+          neutral: {},
+          disagree: { NSDAP: 1, Zentrum: 1, DNVP: 1 }
+        }
+      },
+      {
+        text: "Deutschland braucht eine starke Führung, die Ordnung schafft – auch auf Kosten der Demokratie.",
+        explanation: "Ist eine autoritäre Führung sinnvoller als ein demokratisches System?",
+        points: {
+          agree: { NSDAP: 2, DNVP: 1 },
+          neutral: {},
+          disagree: { SPD: 1, KPD: 1, Zentrum: 1 }
+        }
+      },
+      {
+        text: "Religion sollte eine zentrale Rolle im öffentlichen Leben spielen.",
+        explanation: "Soll Kirche und Glaube Einfluss auf Politik und Gesellschaft haben?",
+        points: {
+          agree: { Zentrum: 2, DNVP: 1 },
+          neutral: {},
+          disagree: { KPD: 1, SPD: 1 }
+        }
+      },
+      {
+        text: "Der Versailler Vertrag ist eine ungerechte Last für Deutschland und sollte vollständig aufgehoben werden.",
+        explanation: "War der Friedensvertrag von 1919 unfair gegenüber Deutschland?",
+        points: {
+          agree: { NSDAP: 2, DNVP: 2 },
+          neutral: {},
+          disagree: { SPD: 1, Zentrum: 1 }
+        }
+      },
+      {
+        text: "Arbeiter sollten Betriebe übernehmen dürfen, um sie selbst zu verwalten.",
+        explanation: "Sollen Arbeiter Kontrolle über Produktionsstätten erhalten?",
+        points: {
+          agree: { KPD: 2 },
+          neutral: {},
+          disagree: { NSDAP: 1, DNVP: 1, Zentrum: 1 }
+        }
+      },
+      {
+        text: "Deutschland sollte sich als führende Nation Europas durchsetzen.",
+        explanation: "Sollte Deutschland eine dominante Position in Europa anstreben?",
+        points: {
+          agree: { NSDAP: 2, DNVP: 1 },
+          neutral: {},
+          disagree: { SPD: 1, KPD: 1, Zentrum: 1 }
+        }
+      },
+      {
+        text: "Die Demokratie in Deutschland hat versagt und sollte abgeschafft werden.",
+        explanation: "Sollte die Weimarer Demokratie beendet werden zugunsten einer anderen Regierungsform?",
+        points: {
+          agree: { NSDAP: 3, DNVP: 2 },
+          neutral: {},
+          disagree: { SPD: 2, KPD: 1, Zentrum: 1 }
+        }
+      },
+      {
+        text: "Frauen sollten das gleiche Recht wie Männer haben, in der Öffentlichkeit zu arbeiten.",
+        explanation: "Sollten Frauen gleichberechtigt in der Arbeitswelt sein?",
+        points: {
+          agree: { SPD: 2 },
+          neutral: {},
+          disagree: { NSDAP: 2, Zentrum: 1 }
+        }
+      },
+      {
+        text: "Deutschland sollte sich stärker in den internationalen Beziehungen engagieren.",
+        explanation: "Sollte Deutschland mehr Einfluss auf der internationalen Bühne ausüben?",
+        points: {
+          agree: { NSDAP: 1, DNVP: 2 },
+          neutral: {},
+          disagree: { SPD: 1, KPD: 1, Zentrum: 1 }
+        }
+      },
+      {
+        text: "Private Unternehmen sollten vom Staat unterstützt werden, um Arbeitsplätze zu sichern.",
+        explanation: "Sollte der Staat private Unternehmen finanziell unterstützen?",
+        points: {
+          agree: { SPD: 2 },
+          neutral: {},
+          disagree: { NSDAP: 1, DNVP: 1, Zentrum: 1 }
+        }
+      },
+      {
+        text: "Der Staat sollte den Einsatz von Militärs zur Aufrechterhaltung der Ordnung erlauben.",
+        explanation: "Sollte das Militär für die Aufrechterhaltung der öffentlichen Ordnung eingesetzt werden?",
+        points: {
+          agree: { NSDAP: 2, DNVP: 2 },
+          neutral: {},
+          disagree: { SPD: 1, KPD: 1, Zentrum: 1 }
+        }
+      },
+      {
+        text: "Es sollte eine strenge Überwachung von politischen Gegnern geben.",
+        explanation: "Sollte es eine strengere Kontrolle von oppositionellen Bewegungen und politischen Gegnern geben?",
+        points: {
+          agree: { NSDAP: 3 },
+          neutral: {},
+          disagree: { SPD: 1, KPD: 2, Zentrum: 1 }
+        }
+      },
+      {
+        text: "Ein starker Nationalismus ist notwendig, um die Interessen Deutschlands zu wahren.",
+        explanation: "Sollte Nationalismus als zentrales Element der deutschen Politik gefördert werden?",
+        points: {
+          agree: { NSDAP: 3, DNVP: 2 },
+          neutral: {},
+          disagree: { SPD: 1, KPD: 1, Zentrum: 1 }
+        }
+      },
+      {
+        text: "Die Rechte der Arbeiter sollten gestärkt werden.",
+        explanation: "Sollte die Arbeiterbewegung gestärkt werden, um die sozialen Rechte zu erweitern?",
+        points: {
+          agree: { KPD: 3, SPD: 2 },
+          neutral: {},
+          disagree: { NSDAP: 1, DNVP: 1, Zentrum: 1 }
+        }
+      },
+      {
+        text: "Die deutsche Kultur sollte in der Öffentlichkeit dominieren.",
+        explanation: "Sollte es ein stärkeres Bewusstsein für die deutsche Kultur geben?",
+        points: {
+          agree: { NSDAP: 2 },
+          neutral: {},
+          disagree: { SPD: 1, KPD: 1, Zentrum: 1, DNVP: 1 }
+        }
+      },
+      {
+        text: "Deutschland sollte im Falle eines Krieges in Europa aktiv eingreifen.",
+        explanation: "Sollte Deutschland militärisch in Konflikte in Europa eingreifen?",
+        points: {
+          agree: { NSDAP: 3, DNVP: 2 },
+          neutral: {},
+          disagree: { SPD: 2, KPD: 1, Zentrum: 1 }
+        }
+      },
+      {
+        text: "Das deutsche Volk sollte in einer reineren Rassenform erhalten bleiben.",
+        explanation: "Sollte der Staat Maßnahmen ergreifen, um die 'Reinheit' der deutschen Bevölkerung zu wahren?",
+        points: {
+          agree: { NSDAP: 3 },
+          neutral: {},
+          disagree: { SPD: 1, KPD: 2, Zentrum: 1, DNVP: 1 }
+        }
+      },
+      {
+        text: "Der Sozialismus sollte der dominierende politische Einfluss in Deutschland werden.",
+        explanation: "Sollte der Sozialismus die zentrale politische Bewegung werden?",
+        points: {
+          agree: { KPD: 3 },
+          neutral: {},
+          disagree: { NSDAP: 1, SPD: 1, Zentrum: 1, DNVP: 1 }
+        }
+      },
+      {
+        text: "Die traditionelle Familie mit einer klaren Rollenverteilung (Mann als Ernährer, Frau im Haushalt) sollte gefördert werden.",
+        explanation: "Sollte das traditionelle Familienbild staatlich unterstützt werden?",
+        points: {
+          agree: { NSDAP: 2, DNVP: 2, Zentrum: 1 },
+          neutral: {},
+          disagree: { SPD: 1 }
+        }
+      },
+      {
+        text: "Das Bildungssystem sollte strenger und auf Leistung ausgerichtet sein.",
+        explanation: "Brauchen wir mehr Disziplin und Fokus auf Leistung in Schulen?",
+        points: {
+          agree: { DNVP: 1 },
+          neutral: {},
+          disagree: { SPD: 1 }
+        }
+      },
+      {
+        text: "Deutschland sollte Kolonien zurückfordern.",
+        explanation: "Soll Deutschland seine ehemaligen Kolonien zurückerlangen?",
+        points: {
+          agree: { NSDAP: 2, DNVP: 2 },
+          neutral: {},
+          disagree: {}
+        }
+      },
+      {
+        text: "Es ist wichtiger, die innere Ordnung aufrechtzuerhalten als die individuelle Freiheit zu garantieren.",
+        explanation: "Hat die Sicherheit des Staates Vorrang vor den Rechten des Einzelnen?",
+        points: {
+          agree: { NSDAP: 2, DNVP: 1 },
+          neutral: {},
+          disagree: { SPD: 1, KPD: 1, Zentrum: 1 }
+        }
+      },
+      {
+        text: "Großgrundbesitz sollte enteignet und an Kleinbauern verteilt werden.",
+        explanation: "Sollte Land von Großbesitzern genommen und an Bauern gegeben werden?",
+        points: {
+          agree: { KPD: 2 },
+          neutral: {},
+          disagree: { Zentrum: 1, DNVP: 1 }
+        }
+      },
+      {
+        text: "Deutschland muss militärisch aufrüsten, um sein Ansehen in der Welt wiederherzustellen.",
+        explanation: "Sollte Deutschland seine Armee vergrößern?",
+        points: {
+          agree: { NSDAP: 2, DNVP: 2 },
+          neutral: {},
+          disagree: { SPD: 1 }
+        }
+      },
+      {
+        text: "Kunst und Kultur sollten primär nationale Werte und Traditionen widerspiegeln.",
+        explanation: "Sollte Kunst vor allem deutsche Kultur und Traditionen zeigen?",
+        points: {
+          agree: { NSDAP: 2, DNVP: 1 },
+          neutral: {},
+          disagree: { SPD: 1 }
+        }
+      },
+      {
+        text: "Die Arbeitslosigkeit sollte durch staatliche Arbeitsbeschaffungsmaßnahmen bekämpft werden.",
+        explanation: "Soll der Staat Programme schaffen, um Arbeitsplätze zu schaffen?",
+        points: {
+          agree: { SPD: 2 },
+          neutral: {},
+          disagree: { DNVP: 1 }
+        }
+      },
+      {
+        text: "Die Presse sollte stärker staatlich kontrolliert werden, um die öffentliche Meinung zu lenken.",
+        explanation: "Sollte der Staat mehr Kontrolle über Zeitungen und Nachrichten haben?",
+        points: {
+          agree: { NSDAP: 3 },
+          neutral: {},
+          disagree: { SPD: 1, KPD: 1, Zentrum: 1 }
+        }
+      },
+      {
+        text: "Deutschland sollte eine führende Rolle in einem gesamteuropäischen Staatenbund spielen.",
+        explanation: "Sollte Deutschland eine wichtige Rolle in einer vereinten europäischen Staatengemeinschaft einnehmen?",
+        points: {
+          agree: { Zentrum: 1, SPD: 1 },
+          neutral: {},
+          disagree: { NSDAP: 1, DNVP: 1 }
+        }
+      }
+    ];
+
+    let currentQuestionIndex = 0;
+    let scores = {
+      NSDAP: 0,
+      SPD: 0,
+      KPD: 0,
+      Zentrum: 0,
+      DNVP: 0
+    };
+
+    const questionTextElement = document.getElementById('questionText');
+    const questionExplanationElement = document.getElementById('questionExplanation');
+    const resultsSidebarElement = document.getElementById('resultsSidebar');
+    const quizContainerElement = document.getElementById('quizContainer');
+
+    function showQuestion() {
+      const currentQuestion = questions[currentQuestionIndex];
+      questionTextElement.textContent = currentQuestion.text;
+      questionExplanationElement.textContent = currentQuestion.explanation;
+    }
+
+    function answer(choice) {
+      const currentQuestion = questions[currentQuestionIndex];
+      const points = currentQuestion.points[choice];
+
+      for (const party in points) {
+        scores[party] += points[party];
+      }
+
+      currentQuestionIndex++;
+
+      if (currentQuestionIndex < questions.length) {
+        showQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      quizContainerElement.style.display = 'none';
+      resultsSidebarElement.style.display = 'block';
+      resultsSidebarElement.innerHTML = '<h2>Wahlergebnis 1933 (basierend auf deinen Antworten)</h2>';
+
+      const sortedScores = Object.entries(scores).sort(([, a], [, b]) => b - a);
+
+      sortedScores.forEach(([party, score]) => {
+        const barContainer = document.createElement('div');
+        barContainer.classList.add('result-bar-container');
+
+        const bar = document.createElement('div');
+        bar.classList.add('result-bar', party);
+        const percentage = (score / (questions.length * 3)) * 100;
+        bar.style.width = `calc(50px + ${percentage}%)`;
+        bar.textContent = `${party}`; // Nur der Parteiname
+
+        const scoreSpan = document.createElement('div');
+        scoreSpan.classList.add('percentage-text');
+        scoreSpan.textContent = `${Math.round(percentage)}%`;
+
+        barContainer.appendChild(bar);
+        barContainer.appendChild(scoreSpan);
+        resultsSidebarElement.appendChild(barContainer);
+      });
+    }
+
+    showQuestion();
+  </script>
+</body>
+</html>
